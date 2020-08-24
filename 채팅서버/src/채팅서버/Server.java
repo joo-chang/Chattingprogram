@@ -2,6 +2,13 @@ package 채팅서버;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -11,6 +18,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
+
 public class Server extends JFrame implements ActionListener{
 
 	private JPanel contentPane;
@@ -19,9 +27,19 @@ public class Server extends JFrame implements ActionListener{
 	private JButton start_btn = new JButton("서버 실행");
 	private JButton stop_btn = new JButton("서버 종료");
 	
+	//NetWork 자원
+	 
+	private ServerSocket server_socket ;
+	private Socket socket;
+	private int port;
+	private InputStream is;
+	private OutputStream os;
+	private DataInputStream dis;
+	private DataOutputStream dos;
+	
 	Server(){
 		init();
-		start();
+		start(); //리스너 설정 메소드
 	}
 	
 	
@@ -33,7 +51,7 @@ public class Server extends JFrame implements ActionListener{
 
 
 
-	private void init() {
+	private void init() { //화면구성
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 367, 448);
 		contentPane = new JPanel();
@@ -66,6 +84,65 @@ public class Server extends JFrame implements ActionListener{
 		this.setVisible(true); // 화면에 보이게
 	}
 	
+	private void Server_start() {
+		try {
+			server_socket = new ServerSocket(port); 
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		if(server_socket !=null) { //정상적으로 포트가 열렸을 경우
+			Connection();
+		}
+		
+	}
+	
+	private void Connection() {
+		
+
+		
+		
+		Thread th = new Thread(new Runnable() {
+
+			@Override
+			public void run() { //스레드에서 처리할 일을 기재한다.
+				try { 
+					
+					//1가지 스레드에서는 한 가지 일만 처리할 수 있다.
+					//한가지 일만 처리하고있을때: accept에서 대기중에는 나머지 GUI가 죽어버림
+					//스레드로 처리해줘야
+					
+					textArea.append("사용자 접속 대기중\n");
+					//사용자 접속 대기. 무한 대기
+					socket = server_socket.accept(); //사용자 접속할 때 에러가 발생할 수 있기 때문에 try catch
+					textArea.append("사용자 접속\n");
+					try {
+						is = socket.getInputStream();
+						dis = new DataInputStream(is);
+						os = socket.getOutputStream();
+						dos = new DataOutputStream(os);
+					} catch (IOException e) {
+					}
+
+					
+					String msg = "";
+
+					
+					textArea.append(msg);
+					
+					dos.writeUTF("접속 확인");
+					
+					dis.readUTF();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			
+		});
+		
+		th.start();
+	}
+	
 	public static void main(String[] args) {
 		
 		new Server();
@@ -76,6 +153,10 @@ public class Server extends JFrame implements ActionListener{
 
 		if(e.getSource() == start_btn) {
 			System.out.println("스타트 버튼 클릭");
+			
+			port = Integer.parseInt(port_tf.getText().trim());
+			
+			Server_start(); //소켓 생성 및 사용자 접속 대기
 		}else if(e.getSource() == stop_btn) {
 			System.out.println("스탑 버튼 클릭");
 		}

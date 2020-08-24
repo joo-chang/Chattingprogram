@@ -2,6 +2,13 @@ package 채팅클라이언트;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.net.UnknownHostException;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -32,6 +39,16 @@ public class Client extends JFrame implements ActionListener{
 	private JList User_list = new JList(); //전체 접속자 List
 	private JList Room_list = new JList(); // 전체 방 목록 List
 	private JTextArea Chat_area = new JTextArea();
+	
+	//네트워크를 위한 자원 변수
+	private Socket socket;
+	private String ip="" ;
+	private int port ;
+	private InputStream is;
+	private OutputStream os;
+	private DataInputStream dis;
+	private DataOutputStream dos;
+	
 	
 	Client(){
 		
@@ -142,6 +159,60 @@ public class Client extends JFrame implements ActionListener{
 		this.setVisible(true);
 	}
 	
+	private void Network() {
+		try {
+			
+			socket = new Socket(ip,port);
+			
+			if(socket != null) { //정상저긍로 소켓이 연결되었을경우
+				Connection();
+			}
+			
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		
+	}
+	
+	private void Connection() {
+		
+		try {
+			
+		is = socket.getInputStream();
+		dis = new DataInputStream(is);
+		
+		os = socket.getOutputStream();
+		dos = new DataOutputStream(os);
+		}catch(IOException e){//에러 처리부분
+			
+		}
+		
+		send_message("클라이언트 접속합니다");
+		
+		String msg = "";
+		try {
+			msg = dis.readUTF();
+			System.out.println("서버로부터 들어온 메세지: "+msg);
+			
+			send_message("~~~~~~~~");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
+	private void send_message(String str) {
+		
+		try {
+			dos.writeUTF(str);
+		} catch (IOException e) { //에러처리부분
+		}
+	}
+	
 	public static void main(String[] args) {
 		new Client();
 	}
@@ -151,6 +222,12 @@ public class Client extends JFrame implements ActionListener{
 		
 		if(e.getSource()== login_btn) {
 			System.out.println("로그인 버튼 클릭");
+			//클릭시 ip, port 가져오기
+			
+			ip = ip_tf.getText().trim();
+			port = Integer.parseInt(port_tf.getText().trim());
+			
+			Network();
 		}else if(e.getSource()==notesend_btn) {
 			System.out.println("쪽지 보내기 버튼");
 		}else if(e.getSource()==join_btn) {
