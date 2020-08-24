@@ -197,7 +197,6 @@ public class Client extends JFrame implements ActionListener{
 			msg = dis.readUTF();
 			System.out.println("서버로부터 들어온 메세지: "+msg);
 			
-			send_message("~~~~~~~~");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
