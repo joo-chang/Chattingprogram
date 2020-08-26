@@ -1,4 +1,4 @@
-package 채팅서버;
+	package 채팅서버;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
