@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Vector;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -32,10 +33,7 @@ public class Server extends JFrame implements ActionListener{
 	private ServerSocket server_socket ;
 	private Socket socket;
 	private int port;
-	private InputStream is;
-	private OutputStream os;
-	private DataInputStream dis;
-	private DataOutputStream dos;
+	private Vector	 user_vc = new Vector();
 	
 	Server(){
 		init();
@@ -106,38 +104,34 @@ public class Server extends JFrame implements ActionListener{
 
 			@Override
 			public void run() { //스레드에서 처리할 일을 기재한다.
-				try { 
+				
+				
+				while(true) {
 					
-					//1가지 스레드에서는 한 가지 일만 처리할 수 있다.
-					//한가지 일만 처리하고있을때: accept에서 대기중에는 나머지 GUI가 죽어버림
-					//스레드로 처리해줘야
 					
-					textArea.append("사용자 접속 대기중\n");
-					//사용자 접속 대기. 무한 대기
-					socket = server_socket.accept(); //사용자 접속할 때 에러가 발생할 수 있기 때문에 try catch
-					textArea.append("사용자 접속\n");
-					try {
-						is = socket.getInputStream();
-						dis = new DataInputStream(is);
-						os = socket.getOutputStream();
-						dos = new DataOutputStream(os);
+					try { 
+					
+						//1가지 스레드에서는 한 가지 일만 처리할 수 있다.
+						//한가지 일만 처리하고있을때: accept에서 대기중에는 나머지 GUI가 죽어버림
+						//스레드로 처리해줘야
+						
+						
+						textArea.append("사용자 접속 대기중\n");
+						//사용자 접속 대기. 무한 대기
+						socket = server_socket.accept(); //사용자 접속할 때 에러가 발생할 수 있기 때문에 try catch
+						textArea.append("사용자 접속\n");
+						
+						UserInfo user = new UserInfo(socket);
+						
+						user.start();
+					
 					} catch (IOException e) {
+						e.printStackTrace();
 					}
-
-					
-					String msg = "";
-
-					
-					textArea.append(msg);
-					
-					dos.writeUTF("접속 확인");
-					
-					dis.readUTF();
-				} catch (IOException e) {
-					e.printStackTrace();
+				
 				}
-			}
 			
+			}
 		});
 		
 		th.start();
@@ -160,5 +154,88 @@ public class Server extends JFrame implements ActionListener{
 		}else if(e.getSource() == stop_btn) {
 			System.out.println("스탑 버튼 클릭");
 		}
+	}// 액션이벤트 끝
+	
+	class UserInfo extends Thread{
+		private OutputStream os;
+		private InputStream is;
+		private DataOutputStream dos;
+		private DataInputStream dis;
+		
+		private Socket user_socket;
+		private String nickName="";
+		
+		
+		UserInfo(Socket soc){
+			this.user_socket = soc;
+			
+			UserNetwork();
+		}
+		
+		private void UserNetwork() {//네트워크 자원 설정
+			try {
+				is = user_socket.getInputStream();
+				dis = new DataInputStream(is);
+				
+				os = user_socket.getOutputStream();
+				dos = new DataOutputStream(os);
+				
+				nickName = dis.readUTF();
+				textArea.append(nickName +": 사용자 접속!\n");
+				
+				
+				//기존 사용자에게 새로운 사용자 알림 
+				System.out.println("현재 접속된 사용자 수 : "+user_vc.size());
+				
+				for (int i = 0; i < user_vc.size(); i++) { // 현재 접속된 사용자에게 새로운 사용자 알림
+					
+					UserInfo u = (UserInfo)user_vc.elementAt(i);
+					u.send_Messagee("NewUser/"+nickName);
+					
+				}
+				
+				//자신에게 기존 사용자 알림
+				
+				
+				user_vc.add(this); //사용자에게 알린 후 Vector에 자신을 추가
+				
+				
+				
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+		}
+		
+		
+		public void run() { // Thread 에서 처리할 내용
+			
+			while(true) {
+				try {
+					String msg = dis.readUTF();
+					textArea.append(nickName+": 사용자로부터 들어온 메세지 :"+msg+"\n");
+				} catch (IOException e) {
+					e.printStackTrace();
+				} // 메세지 수신
+			}
+		}
+		
+		
+		private void send_Messagee(String str) { //문자열을 받아서 전송
+			try {
+				dos.writeUTF(str);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
 	}
+	
+	
+	
+	
+	
+	
+	
+	
 }

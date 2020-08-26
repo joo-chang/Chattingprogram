@@ -9,6 +9,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.StringTokenizer;
+import java.util.Vector;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -42,12 +44,18 @@ public class Client extends JFrame implements ActionListener{
 	
 	//네트워크를 위한 자원 변수
 	private Socket socket;
-	private String ip="" ;
+	private String ip ="";
 	private int port ;
+	private String id ="";
 	private InputStream is;
 	private OutputStream os;
 	private DataInputStream dis;
 	private DataOutputStream dos;
+	
+	//그 외 변수들
+	Vector user_list = new Vector();
+	Vector room_list = new Vector();
+	StringTokenizer st;
 	
 	
 	Client(){
@@ -164,7 +172,7 @@ public class Client extends JFrame implements ActionListener{
 			
 			socket = new Socket(ip,port);
 			
-			if(socket != null) { //정상저긍로 소켓이 연결되었을경우
+			if(socket != null) { //정상적으로 소켓이 연결되었을경우
 				Connection();
 			}
 			
@@ -188,21 +196,56 @@ public class Client extends JFrame implements ActionListener{
 		dos = new DataOutputStream(os);
 		}catch(IOException e){//에러 처리부분
 			
-		}
+		} //stream 설정 끝
 		
-		send_message("클라이언트 접속합니다");
 		
-		String msg = "";
-		try {
-			msg = dis.readUTF();
-			System.out.println("서버로부터 들어온 메세지: "+msg);
+		//처음 접속시 id 전송
+		send_message(id);
+		
+		//User_list에 사용자 추가
+		user_list.add(id);
+		User_list.setListData(user_list);
+		
+		Thread th = new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				while(true) {
+					
+					String msg;
+					try {
+						msg = dis.readUTF();
+						
+						System.out.println("서버로부터 수신된 메세지:"+msg);
+						
+						inmessage(msg);
+						
+					} catch (IOException e) {
+					} //메세지 수신
+					
+					
+				}
+			}
+
+
 			
-			send_message("~~~~~~~~");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		});
+		th.start();
+	}
+	
+	private void inmessage(String str) { //서버로 부터 들어오는 모든 메세지
+		st = new StringTokenizer(str,"/");
 		
+		String protocol = st.nextToken();
+		String Message = st.nextToken();
+		
+		System.out.println("프로토콜:"+protocol);
+		System.out.println("내용:"+Message);
+		
+		if(protocol.equals("NewUser")) { //새로운 접속자
+			user_list.add(Message);
+			User_list.setListData(user_list);
+		}
 	}
 	
 	private void send_message(String str) {
@@ -226,6 +269,7 @@ public class Client extends JFrame implements ActionListener{
 			
 			ip = ip_tf.getText().trim();
 			port = Integer.parseInt(port_tf.getText().trim());
+			id = id_tf.getText().trim();
 			
 			Network();
 		}else if(e.getSource()==notesend_btn) {
@@ -235,6 +279,7 @@ public class Client extends JFrame implements ActionListener{
 		}else if(e.getSource()==createroom_btn) {
 			System.out.println("채팅방 만들기 버튼");
 		}else if(e.getSource()==send_btn) {
+			send_message("임시 테스트 입니다");
 			System.out.println("채팅 전송 버튼");
 		}
 		
