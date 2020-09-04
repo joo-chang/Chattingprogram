@@ -203,7 +203,7 @@ public class Server extends JFrame implements ActionListener{
 				
 				user_vc.add(this); //사용자에게 알린 후 Vector에 자신을 추가
 				
-				
+				BroadCast("user_list_update/");
 				
 			} catch (IOException e) {
 				e.printStackTrace();

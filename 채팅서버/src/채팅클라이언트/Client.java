@@ -131,6 +131,7 @@ public class Client extends JFrame implements ActionListener{
 		
 		User_list.setBounds(12, 30, 97, 129);
 		contentPane.add(User_list);
+		User_list.setListData(user_list);
 		
 		
 		notesend_btn.setBounds(12, 180, 97, 23);
@@ -164,6 +165,7 @@ public class Client extends JFrame implements ActionListener{
 		
 		Room_list.setBounds(12, 238, 97, 129);
 		contentPane.add(Room_list);
+		Room_list.setListData(room_list);
 		
 		this.setVisible(true);
 	}
@@ -245,10 +247,8 @@ public class Client extends JFrame implements ActionListener{
 		
 		if(protocol.equals("NewUser")) { //새로운 접속자
 			user_list.add(Message);
-			User_list.setListData(user_list);
 		}else if(protocol.equals("OldUser")) {
 			user_list.add(Message);
-			User_list.setListData(user_list);
 		}else if(protocol.equals("Note")) {
 			st = new StringTokenizer(Message,"@");
 			String user = st.nextToken();
@@ -258,6 +258,8 @@ public class Client extends JFrame implements ActionListener{
 			
 			JOptionPane.showMessageDialog(null, note, user+"님으로 부터 온 쪽지"
 					,JOptionPane.CLOSED_OPTION);
+		}else if(protocol.equals("user_list_update")) {
+			User_list.setListData(user_list);
 		}
 	}
 	
