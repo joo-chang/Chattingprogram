@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.StringTokenizer;
 import java.util.Vector;
 
 import javax.swing.JButton;
@@ -34,6 +35,8 @@ public class Server extends JFrame implements ActionListener{
 	private Socket socket;
 	private int port;
 	private Vector	 user_vc = new Vector();
+	
+	private StringTokenizer st;
 	
 	Server(){
 		init();
@@ -184,17 +187,18 @@ public class Server extends JFrame implements ActionListener{
 				textArea.append(nickName +": 사용자 접속!\n");
 				
 				
-				//기존 사용자에게 새로운 사용자 알림 
-				System.out.println("현재 접속된 사용자 수 : "+user_vc.size());
-				
-				for (int i = 0; i < user_vc.size(); i++) { // 현재 접속된 사용자에게 새로운 사용자 알림
-					
-					UserInfo u = (UserInfo)user_vc.elementAt(i);
-					u.send_Messagee("NewUser/"+nickName);
-					
-				}
+
+				BroadCast("New User/"+nickName); //기존 사용자에게 자신을 알린다
 				
 				//자신에게 기존 사용자 알림
+				
+				for (int i = 0; i < user_vc.size(); i++) {
+					
+					UserInfo u = (UserInfo)user_vc.elementAt(i);
+					
+					send_Messagee("OldUser/"+u.nickName);
+					
+				}
 				
 				
 				user_vc.add(this); //사용자에게 알린 후 Vector에 자신을 추가
@@ -214,9 +218,60 @@ public class Server extends JFrame implements ActionListener{
 				try {
 					String msg = dis.readUTF();
 					textArea.append(nickName+": 사용자로부터 들어온 메세지 :"+msg+"\n");
+					InMessage(msg);
 				} catch (IOException e) {
 					e.printStackTrace();
 				} // 메세지 수신
+			}
+		}
+		
+		private void InMessage(String str) { //클라이언트로부터 들어오는 메세지 처리
+			
+			st = new StringTokenizer(str,"/");
+			
+			String protocol = st.nextToken();
+			String message = st.nextToken();
+			
+			System.out.println("프로토콜 : "+protocol);
+			System.out.println("메세지 : "+message);
+			
+			
+			if(protocol.equals("Note")) {
+				
+				st = new StringTokenizer(message,"@");
+				
+				String user = st.nextToken();
+				String note = st.nextToken();
+				
+				System.out.println("받는 사람 : "+user);
+				System.out.println("보낼 내용 : "+note);
+				
+				// 벡터에서 해당 사용자를 찾아서 메세지 전송
+				
+				for (int i = 0; i < user_vc.size(); i++) {
+					
+					UserInfo u = (UserInfo)user_vc.elementAt(i);
+					
+					if(u.nickName.equals(user)) {
+						u.send_Messagee("Note/"+nickName+"@"+note);
+						// Note/User1@~~~~~~
+					}
+					
+				}
+			}
+		}
+		
+		
+		private void BroadCast(String str) { // 전체 사용자에게 메세지를 보내는 부분
+			//기존 사용자에게 새로운 사용자 알림 
+			System.out.println("현재 접속된 사용자 수 : "+user_vc.size());
+			
+			for (int i = 0; i < user_vc.size(); i++) { 
+				
+				UserInfo u = (UserInfo)user_vc.elementAt(i);
+				
+				u.send_Messagee("NewUser/"+nickName);
+				
 			}
 		}
 		
